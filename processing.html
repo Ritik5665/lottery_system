@@ -1,0 +1,25 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="text-center">
+    <div class="alert alert-info p-4">
+        <h2>Registration Period Has Ended</h2>
+        <p>We are selecting a winner. Please wait...</p>
+    </div>
+    
+    <div class="spinner-border text-primary" role="status" style="width: 5rem; height: 5rem;">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    
+    <div class="mt-4">
+        <p>The page will automatically refresh in 3 seconds...</p>
+    </div>
+</div>
+
+<script>
+    // Auto-refresh after 3 seconds
+    setTimeout(function() {
+        window.location.reload();
+    }, 3000);
+</script>
+{% endblock %}

@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web-Based Lottery System</title>
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    <style>
+        :root {
+            --orange-100: #fff3e0;
+            --orange-200: #ffe0b2;
+            --orange-300: #ffcc80;
+            --orange-400: #ffb74d;
+            --orange-500: #ffa726;
+            --orange-600: #fb8c00;
+            --orange-700: #f57c00;
+            --orange-800: #ef6c00;
+            --orange-900: #e65100;
+        }
+        
+        body {
+            background-color: var(--orange-900);
+            background-image: linear-gradient(135deg, var(--orange-900) 0%, var(--orange-800) 100%);
+            min-height: 100vh;
+        }
+        
+        .card {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .card-header.bg-secondary {
+            background-color: var(--orange-700) !important;
+        }
+        
+        .card-header.bg-primary {
+            background-color: var(--orange-600) !important;
+        }
+        
+        .card-header.bg-info {
+            background-color: var(--orange-500) !important;
+        }
+        
+        .status-card {
+            transition: all 0.3s ease;
+        }
+        
+        .timer {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--orange-500);
+        }
+        
+        .user-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .winner-announcement {
+            animation: pulse 2s infinite;
+        }
+        
+        .btn-primary {
+            background-color: var(--orange-600);
+            border-color: var(--orange-700);
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--orange-700);
+            border-color: var(--orange-800);
+        }
+        
+        .btn-success {
+            background-color: var(--orange-500);
+            border-color: var(--orange-600);
+        }
+        
+        .btn-success:hover {
+            background-color: var(--orange-600);
+            border-color: var(--orange-700);
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-secondary">
+                    <div class="card-header bg-secondary text-white">
+                        <h1 class="mb-0">Web-Based Lottery System</h1>
+                    </div>
+                    <div class="card-body">
+                        <p class="lead">
+                            This web application simulates a lottery system where users can register within a time limit, 
+                            and a random winner is selected after the registration period ends.
+                        </p>
+                        <div id="lottery-controls">
+                            <form id="start-form" class="mb-3">
+                                <div class="input-group">
+                                    <span class="input-group-text">Time Scale</span>
+                                    <input type="number" id="time-scale" class="form-control" value="0.0133" step="0.001" min="0.001" max="1">
+                                    <span class="input-group-text">1 hour in <span id="scale-time">48</span> seconds</span>
+                                    <button type="submit" class="btn btn-primary">Start Lottery</button>
+                                </div>
+                                <small class="form-text text-muted">
+                                    Default value (0.0133) makes 1 hour run in 48 seconds. For real-time, use 1.0.
+                                </small>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4" id="lottery-status-section" style="display: none;">
+            <div class="col-md-6">
+                <div class="card border-primary h-100 status-card">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h3 class="mb-0">Registration Status</h3>
+                        <span id="status-badge" class="badge bg-success">Open</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-3">
+                            <h2 id="remaining-label">Time Remaining:</h2>
+                            <div class="timer" id="timer">00:00</div>
+                            <div id="extension-notice" class="alert alert-warning mt-2" style="display: none;">
+                                Registration period extended by 30 minutes due to low participation!
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <form id="registration-form">
+                                <div class="input-group mb-3">
+                                    <input type="text" id="username" class="form-control" placeholder="Enter your username" required>
+                                    <button type="submit" class="btn btn-success" id="register-btn">Register</button>
+                                </div>
+                            </form>
+                            <div id="registration-feedback" class="mt-2"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card border-info h-100 status-card">
+                    <div class="card-header bg-info text-white">
+                        <h3 class="mb-0">Participants (<span id="user-count">0</span>)</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="user-list" id="user-list">
+                            <p class="text-center text-muted">No users registered yet.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row" id="winner-section" style="display: none;">
+            <div class="col-12">
+                <div class="card border-warning winner-announcement">
+                    <div class="card-header bg-warning text-dark">
+                        <h2 class="mb-0">🎉 Lottery Results 🎉</h2>
+                    </div>
+                    <div class="card-body text-center">
+                        <h3>Total participants: <span id="total-participants">0</span></h3>
+                        <h1 class="display-4 my-4">The winner is: <span id="winner-name" class="text-warning"></span></h1>
+                        <p class="lead">Registered at: <span id="winner-time"></span></p>
+                        <button id="restart-btn" class="btn btn-lg btn-primary mt-3">Start New Lottery</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const startForm = document.getElementById('start-form');
+        const timeScaleInput = document.getElementById('time-scale');
+        const scaleTimeDisplay = document.getElementById('scale-time');
+        const lotteryStatusSection = document.getElementById('lottery-status-section');
+        const statusBadge = document.getElementById('status-badge');
+        const timer = document.getElementById('timer');
+        const extensionNotice = document.getElementById('extension-notice');
+        const registrationForm = document.getElementById('registration-form');
+        const usernameInput = document.getElementById('username');
+        const registerBtn = document.getElementById('register-btn');
+        const registrationFeedback = document.getElementById('registration-feedback');
+        const userCount = document.getElementById('user-count');
+        const userList = document.getElementById('user-list');
+        const winnerSection = document.getElementById('winner-section');
+        const totalParticipants = document.getElementById('total-participants');
+        const winnerName = document.getElementById('winner-name');
+        const winnerTime = document.getElementById('winner-time');
+        const restartBtn = document.getElementById('restart-btn');
+        
+        // Variables
+        let statusCheckInterval;
+        
+        // Update time scale display
+        timeScaleInput.addEventListener('input', () => {
+            const timeScale = parseFloat(timeScaleInput.value);
+            if (timeScale) {
+                const seconds = Math.round(3600 * timeScale);
+                scaleTimeDisplay.textContent = seconds;
+            }
+        });
+        
+        // Start lottery
+        startForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            formData.append('time_scale', timeScaleInput.value);
+            
+            try {
+                const response = await fetch('/start', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    // Show lottery status section
+                    lotteryStatusSection.style.display = 'flex';
+                    
+                    // Start status check interval
+                    startStatusCheck();
+                }
+            } catch (error) {
+                console.error('Error starting lottery:', error);
+            }
+        });
+        
+        // Register user
+        registrationForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = usernameInput.value.trim();
+            if (!username) return;
+            
+            const formData = new FormData();
+            formData.append('username', username);
+            
+            try {
+                const response = await fetch('/register', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                // Display registration feedback
+                let alertClass = data.success ? 'alert-success' : 'alert-danger';
+                registrationFeedback.innerHTML = `<div class="alert ${alertClass}">${data.message}</div>`;
+                
+                // Clear feedback after 3 seconds
+                setTimeout(() => {
+                    registrationFeedback.innerHTML = '';
+                }, 3000);
+                
+                // Clear input if successful
+                if (data.success) {
+                    usernameInput.value = '';
+                }
+            } catch (error) {
+                console.error('Error registering user:', error);
+                registrationFeedback.innerHTML = '<div class="alert alert-danger">Error connecting to server</div>';
+            }
+        });
+        
+        // Restart lottery
+        restartBtn.addEventListener('click', () => {
+            winnerSection.style.display = 'none';
+            location.reload();
+        });
+        
+        // Format time (mm:ss)
+        function formatTime(minutes, seconds) {
+            return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        // Update user list
+        function updateUserList(users) {
+            if (!users || users.count === 0) {
+                userList.innerHTML = '<p class="text-center text-muted">No users registered yet.</p>';
+                return;
+            }
+            
+            let html = '<ul class="list-group">';
+            for (const [username, timestamp] of Object.entries(users.list)) {
+                html += `
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>${username}</span>
+                        <small class="text-muted">${timestamp}</small>
+                    </li>
+                `;
+            }
+            html += '</ul>';
+            
+            userList.innerHTML = html;
+        }
+        
+        // Start status check interval
+        function startStatusCheck() {
+            // Check immediately
+            checkStatus();
+            
+            // Then check every second
+            statusCheckInterval = setInterval(checkStatus, 1000);
+        }
+        
+        // Check lottery status
+        async function checkStatus() {
+            try {
+                const response = await fetch('/status');
+                const data = await response.json();
+                
+                console.log('Status data:', data);
+                
+                // Update timer
+                timer.textContent = formatTime(data.time_remaining.minutes, data.time_remaining.seconds);
+                
+                // Update extension notice
+                if (data.extension_used) {
+                    extensionNotice.style.display = 'block';
+                } else {
+                    extensionNotice.style.display = 'none';
+                }
+                
+                // Update user count and list
+                userCount.textContent = data.users.count;
+                updateUserList(data.users);
+                
+                // Update status badge
+                if (data.registration_open) {
+                    statusBadge.textContent = 'Open';
+                    statusBadge.classList.remove('bg-danger');
+                    statusBadge.classList.add('bg-success');
+                    registerBtn.disabled = false;
+                } else {
+                    statusBadge.textContent = 'Closed';
+                    statusBadge.classList.remove('bg-success');
+                    statusBadge.classList.add('bg-danger');
+                    registerBtn.disabled = true;
+                }
+                
+                // Check for winner
+                if (!data.registration_open && data.winner) {
+                    // Display winner section
+                    lotteryStatusSection.style.display = 'none';
+                    winnerSection.style.display = 'block';
+                    
+                    // Update winner details
+                    totalParticipants.textContent = data.winner.total_participants;
+                    winnerName.textContent = data.winner.username;
+                    winnerTime.textContent = data.winner.timestamp;
+                    
+                    // Clear status check interval
+                    clearInterval(statusCheckInterval);
+                }
+            } catch (error) {
+                console.error('Error fetching lottery status:', error);
+            }
+        }
+    </script>
+</body>
+</html>
